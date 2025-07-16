@@ -1,6 +1,6 @@
 // pages/index.tsx
 import React, { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
-import { useSession, signOut } from 'next-auth/react'; // 'signIn' removed as it's not used here
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Image from 'next/image'; // Import Image component for optimization
 
@@ -23,8 +23,8 @@ const App: React.FC = () => {
     // State variables with explicit type annotations
     const [listening, setListening] = useState<boolean>(false);
     const [userTranscript, setUserTranscript] = useState<string>('');
-    // Updated AI's initial greeting with the user's provided text
-    const [aiResponse, setAiResponse] = useState<string>('HHello! how can i funk your mental health today?');
+    // Corrected initial greeting and escaped quotes
+    const [aiResponse, setAiResponse] = useState<string>('Hello! How can I motivate your mental health today?');
     const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -185,8 +185,9 @@ const App: React.FC = () => {
         }
 
         // Initialize SpeechRecognition
-        const SpeechRecognition = (window.SpeechRecognition || window.webkitSpeechRecognition) as any;
-        recognitionRef.current = new SpeechRecognition();
+        // Type assertion for window.SpeechRecognition and window.webkitSpeechRecognition constructor
+        const SpeechRecognitionConstructor: { new(): SpeechRecognition } = (window.SpeechRecognition || window.webkitSpeechRecognition) as any;
+        recognitionRef.current = new SpeechRecognitionConstructor();
         recognitionRef.current.continuous = false; // Listen for a single utterance
         recognitionRef.current.interimResults = false; // Only return final results
         recognitionRef.current.lang = selectedLanguage; // Set language for recognition
@@ -303,7 +304,7 @@ const App: React.FC = () => {
                 recognitionRef.current.start(); // Start listening
                 setListening(true);
                 console.log('Listening started...');
-            } catch (error: unknown) { // Use unknown for caught errors
+            } catch (error: unknown) { // Changed 'any' to 'unknown'
                 console.error('Error starting recognition:', error);
                 setListening(false);
                 let errorMessage = 'An unknown error occurred.';
