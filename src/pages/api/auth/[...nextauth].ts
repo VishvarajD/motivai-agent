@@ -1,17 +1,17 @@
 // pages/api/auth/[...nextauth].ts
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-// Import specific types for callbacks
-import type { Session } from "next-auth";
+// Import specific types for callbacks and AuthOptions
+import type { Session, Account, Profile, User } from "next-auth";
 import type { JWT } from "next-auth/jwt";
-import type { Account, Profile, User } from "next-auth";
+import type { AuthOptions } from "next-auth"; // Import AuthOptions type
 
 // For MongoDB integration, you would typically use a database adapter here.
 // For simplicity, we'll just focus on the Google authentication part.
 // import { MongoDBAdapter } from "@next-auth/mongodb-adapter"
 // import clientPromise from "../../../lib/mongodb" // Assuming you have a MongoDB client setup in lib/mongodb.ts
 
-export const authOptions = {
+export const authOptions: AuthOptions = { // Explicitly type authOptions as AuthOptions
   // Configure one or more authentication providers
   providers: [
     GoogleProvider({
@@ -27,7 +27,7 @@ export const authOptions = {
   callbacks: {
     // This callback is called whenever a session is checked.
     // It's useful for adding custom data to the session object.
-    async session({ session, token, user }: { session: Session; token: JWT; user: User }) {
+    async session({ session, token, user }) { // Types are inferred or from imported types
       // If you're using a database adapter, `user` object will be available.
       // If not, `token` will contain the JWT from the provider.
       if (token) {
@@ -42,7 +42,7 @@ export const authOptions = {
       return session;
     },
     // This callback is called when a JWT is created or updated.
-    async jwt({ token, user, account, profile, isNewUser }: { token: JWT; user: User; account: Account | null; profile?: Profile; isNewUser?: boolean }) {
+    async jwt({ token, user, account, profile, isNewUser }) { // Types are inferred or from imported types
       // Persist the OAuth access_token to the token right after sign-in
       if (account) {
         token.accessToken = account.access_token;
