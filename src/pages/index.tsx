@@ -1,8 +1,7 @@
 // pages/index.tsx
-import React, { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import Image from 'next/image'; // Import Image component for optimization
 
 interface SpeechRecognitionEvent extends Event {
     results: SpeechRecognitionResultList;
@@ -23,8 +22,7 @@ const App: React.FC = () => {
     // State variables with explicit type annotations
     const [listening, setListening] = useState<boolean>(false);
     const [userTranscript, setUserTranscript] = useState<string>('');
-    // Corrected initial greeting and escaped quotes
-    const [aiResponse, setAiResponse] = useState<string>('Hello! How can I motivate your mental health today?');
+    const [aiResponse, setAiResponse] = useState<string>('HHello! how can i funk your mental health today?');
     const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -46,102 +44,6 @@ const App: React.FC = () => {
     // Refs for Web Speech API objects with specific types
     const recognitionRef = useRef<SpeechRecognition | null>(null);
     const synthRef = useRef<SpeechSynthesis | null>(null);
-
-    // Function to speak text using Web Speech API (memoized with useCallback)
-    const speakText = useCallback((text: string) => {
-        if (!synthRef.current) {
-            console.error('Speech synthesis not initialized.');
-            return;
-        }
-
-        if (synthRef.current.speaking) {
-            synthRef.current.cancel(); // Stop current speech if any
-        }
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = selectedLanguage; // Set language for speech
-
-        // Set the selected voice
-        const voiceToUse = voices.find(voice => voice.voiceURI === selectedVoiceURI);
-        if (voiceToUse) {
-            utterance.voice = voiceToUse;
-        } else {
-            console.warn('Selected voice not found, using default or first available for language.');
-            // Fallback to a default or first available voice for the selected language
-            utterance.voice = voices.find(voice => voice.lang === selectedLanguage) || voices[0];
-        }
-
-        utterance.pitch = 1; // Default pitch
-        utterance.rate = 1; // Default rate
-
-        utterance.onstart = () => {
-            setIsSpeaking(true);
-        };
-
-        utterance.onend = () => {
-            setIsSpeaking(false);
-        };
-
-        utterance.onerror = (event: SpeechSynthesisErrorEvent) => {
-            console.error('Speech synthesis error:', event.error);
-            setIsSpeaking(false);
-        };
-
-        synthRef.current.speak(utterance);
-    }, [selectedLanguage, selectedVoiceURI, voices]); // Dependencies for speakText
-
-    // Function to get a motivational response from the AI via Next.js API route (memoized with useCallback)
-    const getAiMotivationalResponse = useCallback(async (query: string) => {
-        setIsLoading(true);
-        setAiResponse('Thinking...'); // This will immediately start typing "Thinking..."
-
-        try {
-            const response = await fetch('/api/motivate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                // Pass the selected language for both input and output to the backend
-                body: JSON.stringify({
-                    prompt: query,
-                    inputLanguage: selectedLanguage,
-                    outputLanguage: selectedLanguage,
-                    userId: session?.user?.id || 'anonymous', // Pass user ID from session
-                    userName: session?.user?.name || 'Guest' // Pass user name from session
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
-            }
-
-            const data: { message: string } = await response.json();
-            const motivationalMessage = data.message;
-
-            setAiResponse(motivationalMessage); // This will trigger the typing animation
-            speakText(motivationalMessage);
-
-            // After a successful query, refresh stats
-            const statsResponse = await fetch('/api/stats');
-            if (statsResponse.ok) {
-                const statsData = await statsResponse.json();
-                setTotalUsers(statsData.totalUsers);
-                setTotalQueries(statsData.totalQueries);
-            }
-
-        } catch (error: unknown) { // Use unknown for caught errors
-            console.error('Error fetching AI response:', error);
-            let errorMessage = 'An unknown error occurred.';
-            if (error instanceof Error) {
-                errorMessage = error.message;
-            } else if (typeof error === 'object' && error !== null && 'message' in error) {
-                errorMessage = String((error as { message: unknown }).message);
-            }
-            setAiResponse(`Sorry, I couldn&apos;t get a response. Please try again. (${errorMessage})`);
-            speakText(`Sorry, I couldn&apos;t get a response. Please try again.`);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [selectedLanguage, session, speakText]); // Dependencies for getAiMotivationalResponse
 
     // Effect hook to initialize Web Speech API and load voices on component mount
     // This effect should only run if the user is authenticated.
@@ -185,9 +87,8 @@ const App: React.FC = () => {
         }
 
         // Initialize SpeechRecognition
-        // Type assertion for window.SpeechRecognition and window.webkitSpeechRecognition constructor
-        const SpeechRecognitionConstructor: { new(): SpeechRecognition } = (window.SpeechRecognition || window.webkitSpeechRecognition) as any;
-        recognitionRef.current = new SpeechRecognitionConstructor();
+        const SpeechRecognition = (window.SpeechRecognition || window.webkitSpeechRecognition) as any;
+        recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.continuous = false; // Listen for a single utterance
         recognitionRef.current.interimResults = false; // Only return final results
         recognitionRef.current.lang = selectedLanguage; // Set language for recognition
@@ -228,7 +129,7 @@ const App: React.FC = () => {
                 clearTimeout(typingTimeoutRef.current);
             }
         };
-    }, [selectedLanguage, status, getAiMotivationalResponse, selectedVoiceURI, speakText]); // All dependencies included
+    }, [selectedLanguage, status]); // Re-run effect when selectedLanguage or status changes
 
     // Effect for fetching usage statistics
     useEffect(() => {
@@ -241,7 +142,7 @@ const App: React.FC = () => {
                 const data = await response.json();
                 setTotalUsers(data.totalUsers);
                 setTotalQueries(data.totalQueries);
-            } catch (error: unknown) { // Use unknown for caught errors
+            } catch (error) {
                 console.error('Failed to fetch usage statistics:', error);
                 setTotalUsers(null);
                 setTotalQueries(null);
@@ -270,7 +171,7 @@ const App: React.FC = () => {
                 if (i < aiResponse.length) {
                     setDisplayedAiResponse(prev => prev + aiResponse.charAt(i));
                     i++;
-                    typingTimeoutRef.current = setTimeout(typeText, 50); // Adjusted typing speed to 50ms per character (slower)
+                    typingTimeoutRef.current = setTimeout(typeText, 80); // Adjusted typing speed to 50ms per character (slower)
                 }
             };
             typeText();
@@ -304,19 +205,56 @@ const App: React.FC = () => {
                 recognitionRef.current.start(); // Start listening
                 setListening(true);
                 console.log('Listening started...');
-            } catch (error: unknown) { // Changed 'any' to 'unknown'
+            } catch (error) {
                 console.error('Error starting recognition:', error);
                 setListening(false);
-                let errorMessage = 'An unknown error occurred.';
-                if (error instanceof Error) {
-                    errorMessage = error.message;
-                } else if (typeof error === 'object' && error !== null && 'message' in error) {
-                    errorMessage = String((error as { message: unknown }).message);
-                }
-                setAiResponse(`Could not start microphone. Please check permissions. (${errorMessage})`);
-                speakText(`Could not start microphone. Please check permissions.`);
+                setAiResponse('Could not start microphone. Please check permissions.');
+                speakText('Could not start microphone. Please check permissions.');
             }
         }
+    };
+
+    // Function to speak text using Web Speech API
+    const speakText = (text: string) => {
+        if (!synthRef.current) {
+            console.error('Speech synthesis not initialized.');
+            return;
+        }
+
+        if (synthRef.current.speaking) {
+            synthRef.current.cancel(); // Stop current speech if any
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = selectedLanguage; // Set language for speech
+
+        // Set the selected voice
+        const voiceToUse = voices.find(voice => voice.voiceURI === selectedVoiceURI);
+        if (voiceToUse) {
+            utterance.voice = voiceToUse;
+        } else {
+            console.warn('Selected voice not found, using default or first available for language.');
+            // Fallback to a default or first available voice for the selected language
+            utterance.voice = voices.find(voice => voice.lang === selectedLanguage) || voices[0];
+        }
+
+        utterance.pitch = 1; // Default pitch
+        utterance.rate = 1; // Default rate
+
+        utterance.onstart = () => {
+            setIsSpeaking(true);
+        };
+
+        utterance.onend = () => {
+            setIsSpeaking(false);
+        };
+
+        utterance.onerror = (event: SpeechSynthesisErrorEvent) => {
+            console.error('Speech synthesis error:', event.error);
+            setIsSpeaking(false);
+        };
+
+        synthRef.current.speak(utterance);
     };
 
     // Function to stop the AI's voice immediately
@@ -342,6 +280,53 @@ const App: React.FC = () => {
         // Stop listening if active, as language change requires re-initialization of recognition
         if (listening) {
             toggleListening();
+        }
+    };
+
+    // Function to get a motivational response from the AI via Next.js API route
+    const getAiMotivationalResponse = async (query: string) => {
+        setIsLoading(true);
+        setAiResponse('Thinking...'); // This will immediately start typing "Thinking..."
+
+        try {
+            const response = await fetch('/api/motivate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // Pass the selected language for both input and output to the backend
+                body: JSON.stringify({
+                    prompt: query,
+                    inputLanguage: selectedLanguage,
+                    outputLanguage: selectedLanguage,
+                    userId: session?.user?.id || 'anonymous', // Pass user ID from session
+                    userName: session?.user?.name || 'Guest' // Pass user name from session
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
+            }
+
+            const data: { message: string } = await response.json();
+            const motivationalMessage = data.message;
+
+            setAiResponse(motivationalMessage); // This will trigger the typing animation
+            speakText(motivationalMessage);
+
+            // After a successful query, refresh stats
+            const statsResponse = await fetch('/api/stats');
+            if (statsResponse.ok) {
+                const statsData = await statsResponse.json();
+                setTotalUsers(statsData.totalUsers);
+                setTotalQueries(statsData.totalQueries);
+            }
+
+        } catch (error: any) {
+            console.error('Error fetching AI response:', error);
+            setAiResponse(`Sorry, I couldn't get a response. Please try again. (${error.message})`);
+            speakText(`Sorry, I couldn't get a response. Please try again.`);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -376,33 +361,32 @@ const App: React.FC = () => {
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
                     <div className="flex items-center space-x-3">
                         {session?.user?.image && (
-                            <Image
+                            <img
                                 src={session.user.image}
                                 alt="User Avatar"
-                                width={48} // Specify width
-                                height={48} // Specify height
-                                className="rounded-full border-2 border-blue-400 shadow-md"
+                                className="w-12 h-12 rounded-full border-2 border-blue-400 shadow-md"
                             />
                         )}
                         <p className="text-gray-800 text-xl font-semibold">
-                            Welcome, <span className="text-purple-700">{session?.user?.name?.split(' ')[0] || session?.user?.email?.split('@')[0]}</span>!
+                            Welcome,Shitty <span className="text-purple-700">{session?.user?.name?.split(' ')[0] || session?.user?.email?.split('@')[0]}</span>!
                         </p>
                     </div>
                     <button
                         onClick={() => signOut()}
                         className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200 text-sm"
                     >
-                        Sign Out
+                        merko ghar jana h
                     </button>
                 </div>
 
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4 drop-shadow-lg leading-tight">
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-700 to-blue-600">
-                        Your Daily MotivAI Boost
+                    Demotivational Boosts
                     </span>
                 </h1>
                 <p className="text-gray-700 text-lg md:text-xl mb-8 font-medium">
-                    Ready to conquer your goals? Speak to your AI coach!
+                    Speak with me for demotivational shots <br></br>
+                    Try speaking "hello"
                 </p>
 
                 {/* AI Response Display */}
@@ -416,10 +400,10 @@ const App: React.FC = () => {
                         </div>
                     ) : (
                         <p className={`text-gray-700 text-xl italic ${isSpeaking ? 'animate-pulse text-blue-600 font-semibold font-bold' : 'text-purple-700'}`}>
-                            &quot;{displayedAiResponse}
+                            "{displayedAiResponse}
                             {/* Typing cursor only visible while typing is in progress and not loading */}
                             {(!isLoading && displayedAiResponse.length < aiResponse.length) && <span className="animate-blink">|</span>}
-                        &quot;</p>
+                        "</p>
                     )}
                 </div>
 
@@ -427,7 +411,7 @@ const App: React.FC = () => {
                 {userTranscript && (
                     <div className="bg-blue-50 bg-opacity-70 rounded-xl p-4 mb-8 shadow-inner border border-blue-200">
                         <p className="text-blue-700 text-md">
-                            <span className="font-semibold">You said:</span> &quot;{userTranscript}&quot;
+                            <span className="font-semibold">You said:</span> "{userTranscript}"
                         </p>
                     </div>
                 )}
@@ -532,13 +516,13 @@ const App: React.FC = () => {
             <div className="w-full max-w-3xl text-center mt-8 p-4 bg-white bg-opacity-90 backdrop-blur-md rounded-lg shadow-lg border border-gray-200">
                 {/* Usage Statistics */}
                 <p className="text-gray-700 text-md font-semibold mb-2">
-                    <span className="text-gray-600">Users Ignited:</span> <span className="font-bold text-gray-800">{totalUsers !== null ? totalUsers : '...'}</span>
+                    <span className="text-gray-600">Users :</span> <span className="font-bold text-gray-800">{totalUsers !== null ? totalUsers : '...'}</span>
                     <span className="mx-4 text-gray-400">|</span>
-                    <span className="text-gray-600">Motivational Boosts:</span> <span className="font-bold text-gray-800">{totalQueries !== null ? totalQueries : '...'}</span>
+                    <span className="text-gray-600">Motivational Queries:</span> <span className="font-bold text-gray-800">{totalQueries !== null ? totalQueries : '...'}</span>
                 </p>
                 {/* Made by section */}
                 <p className="mt-2 text-gray-500 text-xs">
-                    Made by <a href="http://vishvarajdeshmukh.me/Portfolio/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 underline">Vishwvaraj Deshmukh</a>
+                    Made by <a href="http://vishvarajdeshmukh.me/Portfolio/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 underline">Vishvaraj Deshmukh</a>
                 </p>
             </div>
         </div>
