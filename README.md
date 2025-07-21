@@ -1,40 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
 
-## Getting Started
 
-First, run the development server:
+MotivAI Voice Agent
+Your Personal AI Motivational Coach for Placements & Internships
+MotivAI is a powerful and engaging AI-powered voice agent designed to provide personalized motivation and guidance to students preparing for placements and internships. Leveraging Google's Gemini API, it offers dynamic, empathetic, and action-oriented encouragement to help students overcome challenges and stay focused on their goals.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+✨ Features
+Google Account Login (NextAuth.js): Secure user authentication via Google accounts.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Personalized Greetings: AI addresses the user by their first name for a more personal touch.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+Voice-Enabled Interaction:
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+Speech-to-Text: Transcribes user's spoken queries into text.
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+Text-to-Speech: AI responds verbally using customizable voices.
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Dynamic AI Responses (Gemini API): Generates highly engaging, empathetic, and action-oriented motivational messages.
 
-## Learn More
+Typing Animation: AI's text responses appear with a realistic typing effect.
 
-To learn more about Next.js, take a look at the following resources:
+Voice Control: "Stop Voice" button to immediately halt AI's speech.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+Multi-Language Support: Choose between English (US) and Marathi (India) for both input and output.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Customizable AI Voice: Select from available system voices for AI's speech.
 
-## Deploy on Vercel
+Usage Statistics: Displays the total number of users and motivational queries globally.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Responsive UI: Optimized for various screen sizes using Tailwind CSS.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+Data Persistence (MongoDB): Stores user interactions and statistics.
+
+🚀 Tech Stack
+Frontend:
+
+Next.js (React Framework)
+
+React
+
+TypeScript
+
+Tailwind CSS (for styling)
+
+Authentication:
+
+NextAuth.js (for Google OAuth)
+
+Backend (Next.js API Routes):
+
+Google Gemini API (for AI text generation)
+
+MongoDB (for database storage)
+
+MongoDB Node.js Driver
+
+Browser APIs:
+
+Web Speech API (SpeechRecognition for STT, SpeechSynthesis for TTS)
