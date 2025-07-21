@@ -1,8 +1,8 @@
 
 
 MotivAI Voice Agent
-Your Personal AI Motivational Coach for Placements & Internships
-MotivAI is a powerful and engaging AI-powered voice agent designed to provide personalized motivation and guidance to students preparing for placements and internships. Leveraging Google's Gemini API, it offers dynamic, empathetic, and action-oriented encouragement to help students overcome challenges and stay focused on their goals.
+Your Personal AI DeMotivational Coach for Placements & Internships
+MotivAI is a powerful and engaging AI-powered voice agent designed to provide personalized demotivation and deguidance to students preparing for placements and internships. Leveraging Google's Gemini API, it offers dynamic, empathetic, and action-oriented encouragement to help students overcome challenges and stay focused on their goals.
 
 ✨ Features
 Google Account Login (NextAuth.js): Secure user authentication via Google accounts.
